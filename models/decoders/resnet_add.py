@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class ResnetBlockConv1d(nn.Module):
     """ 1D-Convolutional ResNet block class.
@@ -61,16 +61,6 @@ class ResnetBlockConv1d(nn.Module):
 
 
 class Decoder(nn.Module):
-    """ Decoder conditioned by adding.
-
-    Example configuration:
-        z_dim: 128
-        hidden_size: 256
-        n_blocks: 5
-        out_dim: 3  # we are outputting the gradient
-        sigma_condition: True
-        xyz_condition: True
-    """
     def __init__(self, _, cfg):
         super().__init__()
         self.cfg = cfg
@@ -83,12 +73,12 @@ class Decoder(nn.Module):
         # Input = Conditional = zdim (shape) + dim (xyz) + 1 (sigma)
         c_dim = z_dim + dim + 1
         self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
-        self.blocks = nn.ModuleList([
-            ResnetBlockConv1d(c_dim, hidden_size) for _ in range(n_blocks)
-        ])
-        self.bn_out = nn.BatchNorm1d(hidden_size)
-        self.conv_out = nn.Conv1d(hidden_size, out_dim, 1)
-        self.actvn_out = nn.ReLU()
+        blocks = []
+        for i in range(n_blocks):
+            blocks.append(ResnetBlockConv1d(c_dim, hidden_size))
+        self.blocks = nn.ModuleList(blocks)
+        self.bn = nn.BatchNorm1d(hidden_size)
+        self.conv = nn.Conv1d(hidden_size, out_dim, 1)
 
     # This should have the same signature as the sig condition one
     def forward(self, x, c):
@@ -98,13 +88,13 @@ class Decoder(nn.Module):
         :return: (bs, npoints, self.dim) Gradient (self.dim dimension)
         """
         p = x.transpose(1, 2)  # (bs, dim, n_points)
-        batch_size, D, num_points = p.size()
+        batch_size, D, num_points = p.shape
 
         c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
         c_xyz = torch.cat([p, c_expand], dim=1)
         net = self.conv_p(c_xyz)
         for block in self.blocks:
             net = block(net, c_xyz)
-        out = self.conv_out(self.actvn_out(self.bn_out(net))).transpose(1, 2)
+        out = self.conv(F.relu(self.bn(net))).transpose(1, 2)
         return out
 

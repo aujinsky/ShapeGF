@@ -28,14 +28,22 @@ class Generator(nn.Module):
         self.dims = cfgmodel.dims
 
         curr_dim = self.inp_dim
-        self.layers = []
+        layers = []
         self.bns = []
         for hid in self.dims:
-            self.layers.append(nn.Linear(curr_dim, hid))
-            self.bns.append(nn.BatchNorm1d(hid))
+            linear = nn.Linear(curr_dim, hid)
+            if self.use_bn:
+                bn = nn.BatchNorm1d(hid)
+            else:
+                bn = nn.Identity()
             curr_dim = hid
-        self.layers = nn.ModuleList(self.layers)
-        self.bns = nn.ModuleList(self.bns)
+            layers.append(
+                nn.Sequential(
+                    linear,
+                    bn
+                )
+            )
+        self.layers = nn.ModuleList(layers)
         self.out = nn.Linear(curr_dim, self.out_dim)
         self.out_bn = nn.BatchNorm1d(self.out_dim)
         self.prior_type = getattr(cfgmodel, "prior", "gaussian")
@@ -44,29 +52,21 @@ class Generator(nn.Module):
         if self.prior_type == "truncate_gaussian":
             gaussian_scale = getattr(self.cfgmodel, "gaussian_scale", 1.)
             truncate_std = getattr(self.cfgmodel, "truncate_std", 2.)
-            noise = (torch.randn(bs, self.inp_dim) * gaussian_scale).cuda()
-            noise = truncated_normal(
-                noise, mean=0, std=gaussian_scale, trunc_std=truncate_std)
-            return noise
+            noise = torch.randn(bs, self.inp_dim).cuda() * gaussian_scale
+            noise = truncated_normal(noise, mean=0, std=gaussian_scale, trunc_std=truncate_std)
         elif self.prior_type == "gaussian":
             gaussian_scale = getattr(self.cfgmodel, "gaussian_scale", 1.)
-            return torch.randn(bs, self.inp_dim).cuda() * gaussian_scale
-
-        else:
-            raise NotImplementedError(
-                "Invalid prior type:%s" % self.prior_type)
+            noise = torch.randn(bs, self.inp_dim).cuda() * gaussian_scale
+        return noise.cuda()
 
     def forward(self, z=None, bs=None):
         if z is None:
             assert bs is not None
-            z = self.get_prior(bs).cuda()
+            z = self.get_prior(bs)
 
         y = z
-        for layer, bn in zip(self.layers, self.bns):
-            y = layer(y)
-            if self.use_bn:
-                y = bn(y)
-            y = F.relu(y)
+        for layer in self.layers:
+            y = F.relu(layer(y))
         y = self.out(y)
 
         if self.output_bn:

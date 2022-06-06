@@ -15,12 +15,12 @@ data:
 viz:
   save_freq: 100
   log_freq: 10
-  viz_freq: 2000
+  viz_freq: 1000
   val_freq: -1
 
 trainer:
   type: trainers.lgan_trainer_3D
-  epochs: 10000
+  epochs: 1000
   seed: 100
 
   # For autoencoding
@@ -48,7 +48,7 @@ trainer:
     step_epoch: 2000
 
   # For GAN
-  ae_pretrained: 'pretrained/recon/airplane_recon_add.pt'
+  ae_pretrained: '/home/ajkim/ShapeGF2/logs/airplane_recon_add_2022-Jun-06-20-10-47/checkpoints/epoch_199_iters_17600.pt'
   gan_only: True
   gan_loss_type: "wgan"
   # Gradient penalty

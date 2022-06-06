@@ -46,7 +46,9 @@ The epoch_199 one is recon, the other one is gen.
 
 ## Training and Testing
 python train.py configs/recon/airplane/airplane_recon_add.yaml  
-python train.py configs/gen/airplane_gen_add.yaml  
+python train.py configs/gen/airplane_gen_add.yaml   
+
+You should edit config files to match model location and data directory accordingly
 
 python test.py configs/recon/airplane/airplane_recon_add.yaml \  
     --pretrained <directory of pretrained model.pt>  

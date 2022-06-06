@@ -73,7 +73,7 @@ def get_args(ngpus_per_node):
 
     # parse config file
     with open(args.config, 'r') as f:
-        config = yaml.load(f)
+        config = yaml.safe_load(f)
     config = dict2namespace(config)
 
     #  Create log_name

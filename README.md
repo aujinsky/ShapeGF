@@ -39,14 +39,19 @@ make all
 
 Please unzip the dataset and save the dataset under /data directory: [link](https://drive.google.com/drive/folders/1G0rf-6HSHoTll6aH7voh-dXj6hCRhSAQ). 
 
-## Training and Testing
-python train.py configs/recon/airplane/airplane_recon_add.yaml
-python train.py configs/gen/airplane_gen_add.yaml
+# Pretrained model
 
-python test.py configs/recon/airplane/airplane_recon_add.yaml \
-    --pretrained <directory of pretrained model.pt>
-python test.py configs/gen/airplane_gen_add.yaml \
-    --pretrained <directory of pretrained model.pt>
+[link](https://drive.google.com/drive/folders/1kTBlrqeDSGbYQA45SOX7hMCzhU6GXEQu?usp=sharing)  
+The epoch_199 one is recon, the other one is gen.  
+
+## Training and Testing
+python train.py configs/recon/airplane/airplane_recon_add.yaml  
+python train.py configs/gen/airplane_gen_add.yaml  
+
+python test.py configs/recon/airplane/airplane_recon_add.yaml \  
+    --pretrained <directory of pretrained model.pt>  
+python test.py configs/gen/airplane_gen_add.yaml \  
+    --pretrained <directory of pretrained model.pt>  
 
 
 # Original Cite 
